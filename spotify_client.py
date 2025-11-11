@@ -3,6 +3,7 @@ import os
 import base64
 import requests
 import json
+import random 
 
 load_dotenv()
 
@@ -81,3 +82,57 @@ def extract_playlist_id(playlist_link):
     else:
         # Assume the user already pasted the ID directly
         return playlist_link.strip()
+    
+def get_playlist_by_link(token, playlist_link):
+    link = extract_playlist_id(playlist_link)
+    url = f"https://api.spotify.com/v1/playlists/{link}/tracks"
+    
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
+    
+    params = {
+        # Tracks name, artists name and next page
+        "fields": "items(track(name, artists(name))),next",
+        "limit": 100
+    } 
+
+    result = requests.get(url, headers=headers, params=params)
+    data = result.json()
+
+    all_tracks_in_playlist = []
+
+    while True:
+        for item in data.get("items", []):
+            track = item.get("track")
+            if not track: 
+                # Skip unavailable tracks
+                continue
+
+            track_name = track.get("name")
+            artist_names = [artist.get("name") for artist in track.get("artists", []) if artist.get("name")]
+            all_tracks_in_playlist.append({
+                "track_name": track_name,                "artist_names": artist_names
+            })
+
+        next_url = data.get("next")
+        if not next_url:
+            break 
+
+        resp = requests.get(next_url, headers=headers)
+        data = resp.json()
+
+    return all_tracks_in_playlist
+
+# Choose a random song from a playlist
+def get_random_song_from_playlist(token, playlist_link):
+    # Get all songs from a playlist
+    all_tracks = get_playlist_by_link(token, playlist_link)
+
+    # No songs in playlist
+    if not all_tracks:
+        print("No tracks in this playlist")
+        return None 
+    
+    random_song = random.choice(all_tracks)
+    return random_song
