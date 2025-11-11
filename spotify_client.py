@@ -62,3 +62,22 @@ def search_for_artist(token, artist_name: str):
         return artist
     else: 
         print(f"No artist named {artist_name} found")
+
+# Extract the needed part to search for the songs in a playlist
+# Helper function to get_playlist_by_link
+def extract_playlist_id(playlist_link):    
+    if "playlist/" in playlist_link:
+        # Take everything after "playlist/"
+        #xxxxxxxxxxxxxxxx?si=0ec7299ffa1a419a
+        part = playlist_link.split("playlist/")[1]
+        # Remove the ?si= part
+        #xxxxxxxxxxxxxxxx
+        playlist_id = part.split("?")[0]
+        return playlist_id
+
+    # Other format of url from API
+    elif "spotify:playlist:" in playlist_link:
+        return playlist_link.split("spotify:playlist:")[1]
+    else:
+        # Assume the user already pasted the ID directly
+        return playlist_link.strip()
