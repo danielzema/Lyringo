@@ -53,22 +53,28 @@ def main():
     else:
         # Playlist flow (default)
         token = spotify_client.get_token()
+        print("")
+        print("+-----------------------------------------------------------------------------------+")
+        print("|                                                                                   |")
+        print("| How to get the link of a playlist in Spotify:                                     |")
+        print("|                                                                                   |")
+        print("| 1. Go to your playlist and press the three dots.                                  |")
+        print("| 2. Press 'Share' -> 'Copy playlist link'.                                         |")
+        print("|                                                                                   |")
+        print("+-----------------------------------------------------------------------------------+")
+        print("")
         # Prompt until a plausible Spotify playlist link/URI is provided and a song can be fetched.
         while True:
-            print("")
-            print("+-----------------------------------------------------------------------------------+")
-            print("")
-            print("Head over to Spotify and get a playlist link.. TODO EXPLAIN STEPS")
-            print("")
-            print("+-----------------------------------------------------------------------------------+")
-            print("")
-            link = input("Link: ").strip()
+            link = input("Paste your link here: ").strip()
             if not link:
                 print("")
-                print("Cmon bro du måste ha link")
+                print("Cmon bro................")
+                print("")
                 continue
             if not ("spotify" in link and ("playlist" in link or link.startswith("spotify:"))):
+                print("")
                 print("Invalid Spotify playlist link. Please try again.")
+                print("")
                 continue
 
             print("")
@@ -167,8 +173,7 @@ def main():
     print("|                                                                                   |")
     print("+-----------------------------------------------------------------------------------+")
     print("")
-    print("Language: ")
-    user_lang = input().strip()
+    user_lang = input("Language: ").strip()
     print()
     # convert language name like "english" -> "en" using translate_client helper
     # convert language name like "english" -> "en" using translate_client helper
@@ -212,11 +217,13 @@ def main():
     print("| 1. Examine the displayed line of lyrics.                                          |")
     print("| 2. Try to translate to your chosen language (press ENTER when you are done).      |")
     print("| 3. Compare you answer with the actual translation.                                |")
-    print("| 4. Press ENTER to display the next line of lyrics.                                |")
+    print("| 4. When you are done, press ENTER to display the next line of lyrics.             |")
     print("|                                                                                   |")
     print("| Leave blank to skip a line.                                                       |")
     print("| Press Ctrl+C to quit early.                                                       |")
     print("|                                                                                   |")
+    print("| Press enter whenever you are ready to start!                                      |")
+    print("| Remember that translations may be inaccurate.                                     |")
     print("+-----------------------------------------------------------------------------------+")
     for orig in lines:
         orig_strip = orig.strip()
@@ -241,9 +248,9 @@ def main():
         # Wait for the user to press Enter before showing the next lyrics line.
         # This ensures a line-by-line flow: translate -> see correct answer -> press Enter -> next line.
         try:
-            input("Press Enter to continue...")
+            input("")
         except (KeyboardInterrupt, EOFError):
-            print("\nInterrupted. Exiting the game.")
+            print("\nExiting the game.")
             break
 
 
