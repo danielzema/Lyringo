@@ -215,16 +215,27 @@ def main():
     print("| How to play:                                                                      |")
     print("|                                                                                   |")
     print("| 1. Examine the displayed line of lyrics.                                          |")
-    print("| 2. Try to translate to your chosen language (press ENTER when you are done).      |")
+    print("| 2. Try to translate to your chosen language, press ENTER when you are done.      |")
     print("| 3. Compare you answer with the actual translation.                                |")
     print("| 4. When you are done, press ENTER to display the next line of lyrics.             |")
     print("|                                                                                   |")
     print("| Leave blank to skip a line.                                                       |")
     print("| Press Ctrl+C to quit early.                                                       |")
     print("|                                                                                   |")
-    print("| Press enter whenever you are ready to start!                                      |")
-    print("| Remember that translations may be inaccurate.                                     |")
+    print("|                                                                                   |")
+    print("|                 +-----------------------------------------------+                 |")
+    print("|                 | Press ENTER whenever you are ready to start!  |                 |")
+    print("|                 | Remember that translations may be inaccurate. |                 |")
+    print("|                 +-----------------------------------------------+                 |")
+    print("|                                                                                   |")
+    print("|                                                                                   |")
     print("+-----------------------------------------------------------------------------------+")
+    # Wait for the user to press Enter before starting the game
+    try:
+        input("")
+    except (KeyboardInterrupt, EOFError):
+        print("\nInterrupted. Exiting.")
+        return
     for orig in lines:
         orig_strip = orig.strip()
         if not orig_strip:
@@ -257,3 +268,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# TODO Now that 2 works, fix 1.
