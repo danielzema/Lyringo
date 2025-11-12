@@ -4,28 +4,45 @@ import genius_client
 import translate_client
 
 def main():
-    token = spotify_client.get_token()
     print("+-----------------------------------------------------------------------------------+")
     print("|                                                                                   |")
     print("| Welcome to Lyringo!                                                               |")
     print("|                                                                                   |")
-    print("| Learn a new language by translating your favourite songs to different languages.  |")
-    print("|                                                                                   |")
-    print("| To get started, head over to Spotify and copy the link of a playlist.             |")
+    print("| Learn new languages by translating your favourite songs.                          |")
     print("|                                                                                   |")
     print("+-----------------------------------------------------------------------------------+")
     print("")
-    print("Paste the link here and press ENTER:")
-    link = input()
+    print("There are two alternatives for selecting a song:")
     print("")
-    print("+-----------------------------------------------------------------------------------+")
-    print("|                                                                                   |")
-    print("| Choosing a random song from your playlist...                                      |")
-    print("|                                                                                   |")
-    random_song = spotify_client.get_random_song_from_playlist(token, link)
-    track = random_song.get("track_name")
-    artists = random_song.get("artist_names", [])
-    primary_artist = artists[0]
+    print('Input: "1" - Let Lyringo choose a random song from your playlist')
+    print('Input: "2" - Manually search for a song')
+    print("")
+    choice = input("Input: ").strip()
+
+    if choice == "2":
+        # Manual entry: ask for title and artist and construct a minimal song dict
+        track = input("Song title: ").strip()
+        artist_input = input("Artist name: ").strip()
+        if not track:
+            print("No song title provided. Exiting.")
+            return
+        primary_artist = artist_input or ""
+        random_song = {"track_name": track, "artist_names": [primary_artist] if primary_artist else []}
+    else:
+        # Playlist flow (default)
+        token = spotify_client.get_token()
+        print("")
+        print("Paste the link here and press ENTER:")
+        link = input()
+        print("")
+        print("+-----------------------------------------------------------------------------------+")
+        print("|                                                                                   |")
+        print("| Choosing a random song from your playlist...                                      |")
+        print("|                                                                                   |")
+        random_song = spotify_client.get_random_song_from_playlist(token, link)
+        track = random_song.get("track_name")
+        artists = random_song.get("artist_names", [])
+        primary_artist = artists[0] if artists else ""
 
     # Fetch lyrics and metadata (get_song_lyrics now returns a dict with
     # keys 'formatted' and 'language'). We prefer the language reported by
@@ -96,7 +113,13 @@ def main():
     
     print("+-----------------------------------------------------------------------------------+")
     print("|                                                                                   |")
-    print("| Translate each displayed line into your chosen language.                          |")
+    print("| How to play:                                                                      |")
+    print("|                                                                                   |")
+    print("| 1. Examine the displayed line of lyrics.                                          |")
+    print("| 2. Try to translate to your chosen language (press ENTER when you are done).      |")
+    print("| 3. Compare you answer with the actual translation.                                |")
+    print("| 4. Press ENTER to display the next line of lyrics.                                |")
+    print("|                                                                                   |")
     print("| Leave blank to skip a line.                                                       |")
     print("| Press Ctrl+C to quit early.                                                       |")
     print("|                                                                                   |")
@@ -121,6 +144,13 @@ def main():
         _, expected_body = translate_client._extract_header(expected_full)
 
         print(f"Answer:         {expected_body}")
+        # Wait for the user to press Enter before showing the next lyrics line.
+        # This ensures a line-by-line flow: translate -> see correct answer -> press Enter -> next line.
+        try:
+            input("Press Enter to continue...")
+        except (KeyboardInterrupt, EOFError):
+            print("\nInterrupted. Exiting the game.")
+            break
 
 
 

@@ -147,3 +147,4 @@ def get_random_song_from_playlist(token, playlist_link):
 
 # TODO Write a function that pads Chosen song to the right width
 # TODO Add a flag when the entire song is over asking to play the game again
+# TODO Instead of sending request to tgranslate after user inputs, send request before and then print
