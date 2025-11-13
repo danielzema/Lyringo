@@ -68,7 +68,7 @@ def main():
             link = input("Paste your link here: ").strip()
             if not link:
                 print("")
-                print("Cmon bro................")
+                print("Paste a link here. Please try again.")
                 print("")
                 continue
             if not ("spotify" in link and ("playlist" in link or link.startswith("spotify:"))):
@@ -104,53 +104,135 @@ def main():
     # keys 'formatted' and 'language'). We prefer the language reported by
     # the provider instead of doing automatic detection.
     # Wrap the network call with retries so transient timeouts don't crash.
-    lyrics_info = None
     max_attempts = 3
-    for attempt in range(1, max_attempts + 1):
-        try:
-            # Only show the "Searching for your song..." banner when the user
-            # manually searched (option 2). For playlist flow we avoid the
-            # duplicate-looking prompt but still fetch lyrics.
-            if 'manual_mode' in locals() and manual_mode:
-                print("+-----------------------------------------------------------------------------------+")
-                print("|                                                                                   |")
-                print("| Searching for your song...                                                        |")
-                print("|                                                                                   |")
-                print("+-----------------------------------------------------------------------------------+")
-            lyrics_info = genius_client.get_song_lyrics(track, primary_artist)
-            break
-        except requests.exceptions.Timeout:
-            if attempt < max_attempts:
-                print(f"Search timed out (attempt {attempt}/{max_attempts}). Retrying...")
-                time.sleep(1.5 * attempt)
-                continue
-            else:
-                print("Search timed out after multiple attempts. Please check your internet connection and try again later.")
-                return
-        except requests.exceptions.RequestException as e:
-            print(f"Network error while searching for song: {e}")
-            return
-        except Exception as e:
-            # Unexpected error from the lyrics provider; show a friendly message.
-            print(f"Error while searching for song: {e}")
-            return
-    formatted_lyrics = None
-    lyrics_language = None
-    if isinstance(lyrics_info, dict):
-        formatted_lyrics = lyrics_info.get("formatted")
-        lyrics_language = lyrics_info.get("language")
-    else:
-        # fallback for older return shape
-        formatted_lyrics = lyrics_info
-    # Extract header (title — artist) and body once and reuse.
-    header, body = translate_client._extract_header(formatted_lyrics or "")
 
-    # If the user manually entered a song, provide clearer feedback.
-    if 'manual_mode' in locals() and manual_mode:
-        # If no lyrics/formatted output was returned, inform the user.
-        if not formatted_lyrics or not (header or body.strip()):
-            print("no song named that found")
-            return
+    # If we're in playlist mode and the chosen song has no lyrics, try a few
+    # other random songs from the same playlist before giving up.
+    no_lyrics_attempts = 0
+    max_no_lyrics_attempts = 3
+
+    while True:
+        lyrics_info = None
+        for attempt in range(1, max_attempts + 1):
+            try:
+                # Only show the "Searching for your song..." banner when the user
+                # manually searched (option 2). For playlist flow we avoid the
+                # duplicate-looking prompt but still fetch lyrics.
+                if 'manual_mode' in locals() and manual_mode:
+                    print("+-----------------------------------------------------------------------------------+")
+                    print("|                                                                                   |")
+                    print("| Searching for your song...                                                        |")
+                    print("|                                                                                   |")
+                    print("+-----------------------------------------------------------------------------------+")
+                lyrics_info = genius_client.get_song_lyrics(track, primary_artist)
+                break
+            except requests.exceptions.Timeout:
+                if attempt < max_attempts:
+                    print(f"Search timed out (attempt {attempt}/{max_attempts}). Retrying...")
+                    time.sleep(1.5 * attempt)
+                    continue
+                else:
+                    print("Search timed out after multiple attempts. Please check your internet connection and try again later.")
+                    return
+            except requests.exceptions.RequestException as e:
+                print(f"Network error while searching for song: {e}")
+                return
+            except Exception as e:
+                # Unexpected error from the lyrics provider; show a friendly message.
+                print(f"Error while searching for song: {e}")
+                return
+
+        formatted_lyrics = None
+        lyrics_language = None
+        if isinstance(lyrics_info, dict):
+            formatted_lyrics = lyrics_info.get("formatted")
+            lyrics_language = lyrics_info.get("language")
+        else:
+            # fallback for older return shape
+            formatted_lyrics = lyrics_info
+
+        # Extract header (title — artist) and body once and reuse.
+        header, body = translate_client._extract_header(formatted_lyrics or "")
+
+        # If there are no lyrics in the returned formatted text, decide what
+        # to do next. For manual searches we keep previous behaviour and
+        # quit. For playlist flow, try another random song (up to a limit).
+        if not (body and body.strip()):
+            if 'manual_mode' in locals() and manual_mode:
+                # Manual search: if nothing was returned at all, the song was
+                # not found. If a formatted header exists but the body is empty,
+                # report that there are no lyrics.
+                if not formatted_lyrics:
+                    print("no song named that found")
+                    return
+                else:
+                    print("no lyrics, quitting")
+                    return
+            else:
+                # Playlist flow: inform the user and try another random song.
+                display_song = header if header else (f"{track} - {primary_artist}" if primary_artist else f"{track}")
+                print("")
+                print(f"{display_song} has no lyrics. Choosing another random song...")
+                print("")
+                no_lyrics_attempts += 1
+                if no_lyrics_attempts >= max_no_lyrics_attempts:
+                    # After several attempts, ask the user for another playlist
+                    # link so they can provide a playlist that actually has
+                    # lyrics. Allow the user to press ENTER to quit.
+                    print("Tried several songs in this playlist but couldn't find lyrics.")
+                    print("Please paste another playlist link (or press ENTER to exit):")
+                    while True:
+                        print("")
+                        new_link = input("link: ").strip()
+                        if not new_link:
+                            print("No new playlist provided. Exiting.")
+                            return
+                        if not ("spotify" in new_link and ("playlist" in new_link or new_link.startswith("spotify:"))):
+                            print("Invalid Spotify playlist link. Please try again or press ENTER to quit.")
+                            continue
+                        # try to select a random song from the newly provided playlist
+                        try:
+                            new_song = spotify_client.get_random_song_from_playlist(token, new_link)
+                        except Exception as e:
+                            print(f"Error reading new playlist: {e}")
+                            print("Please try another link or press ENTER to quit.")
+                            continue
+
+                        if not new_song:
+                            print("Could not find a song in that playlist. Try another playlist link or press ENTER to quit.")
+                            continue
+
+                        # Adopt the new playlist and reset attempts
+                        link = new_link
+                        random_song = new_song
+                        track = random_song.get("track_name")
+                        artists = random_song.get("artist_names", [])
+                        primary_artist = artists[0] if artists else ""
+                        no_lyrics_attempts = 0
+                        break
+
+                # attempt to pick another random song from the same playlist
+                try:
+                    # `token` and `link` are set in the playlist branch above.
+                    new_song = spotify_client.get_random_song_from_playlist(token, link)
+                except Exception as e:
+                    print(f"Error selecting another song from playlist: {e}")
+                    return
+
+                if not new_song:
+                    print("Could not find another song in the playlist. Exiting.")
+                    return
+
+                random_song = new_song
+                track = random_song.get("track_name")
+                artists = random_song.get("artist_names", [])
+                primary_artist = artists[0] if artists else ""
+                # loop back and try fetching lyrics for the new song
+                continue
+
+        # If we reach here body contains lyrics — exit the retry loop and
+        # continue to the gameplay.
+        break
 
     # Display the song chosen by the program. Prefer the provider's header
     # (which contains the canonical title and artist) when available.
