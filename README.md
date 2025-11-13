@@ -19,6 +19,7 @@ Line-by-line gameplay:
 
 ## Usage
 The application is not yet hosted and therefore only works for me.
+
 (For developers: Follow the installationguide at the end of this page.)
 
 Before public release Lyringo will transform into a web-hosted application.
