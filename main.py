@@ -1,7 +1,7 @@
 import re
-import spotify_client
-import genius_client
-import translate_client
+import api.spotify as spotify_client
+import api.genius as genius_client
+import api.translate as translate_client
 import requests
 import time
 
