@@ -108,11 +108,15 @@ def main():
     max_attempts = 3
     for attempt in range(1, max_attempts + 1):
         try:
-            print("+-----------------------------------------------------------------------------------+")
-            print("|                                                                                   |")
-            print("| Searching for your song...                                                        |")
-            print("|                                                                                   |")
-            print("+-----------------------------------------------------------------------------------+")
+            # Only show the "Searching for your song..." banner when the user
+            # manually searched (option 2). For playlist flow we avoid the
+            # duplicate-looking prompt but still fetch lyrics.
+            if 'manual_mode' in locals() and manual_mode:
+                print("+-----------------------------------------------------------------------------------+")
+                print("|                                                                                   |")
+                print("| Searching for your song...                                                        |")
+                print("|                                                                                   |")
+                print("+-----------------------------------------------------------------------------------+")
             lyrics_info = genius_client.get_song_lyrics(track, primary_artist)
             break
         except requests.exceptions.Timeout:
