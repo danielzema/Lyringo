@@ -1,7 +1,7 @@
 # Lyringo
 Learn a language by translating your favourite songs. 🎵
 
-Lyringo is a CLI game perfect for microlearning by translating lyrics line by line.
+Lyringo is a command line interface (CLI) game perfect for microlearning by translating lyrics line by line.
 
 ## Features
 
@@ -20,7 +20,7 @@ Line-by-line gameplay:
 ## Usage
 The application is not yet hosted and therefore only works for me.
 
-(For developers: Follow the installationguide at the end of this page.)
+(For developers: Follow the installation guide at the end of this page.)
 
 Before public release Lyringo will transform into a web-hosted application.
 
