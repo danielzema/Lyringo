@@ -140,9 +140,6 @@ def get_random_song_from_playlist(token, playlist_link):
     track_name = random_song.get("track_name") or "Unknown track"
     artist_names = random_song.get("artist_names", [])
     artists = ", ".join(artist_names) if artist_names else "Unknown artist"
-    print("")
-    print(f"Chosen song: {track_name} - {artists}")
-    print("")
     return random_song
 
 # TODO Write a function that pads Chosen song to the right width
