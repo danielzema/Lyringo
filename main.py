@@ -215,7 +215,7 @@ def main():
     print("| How to play:                                                                      |")
     print("|                                                                                   |")
     print("| 1. Examine the displayed line of lyrics.                                          |")
-    print("| 2. Try to translate to your chosen language, press ENTER when you are done.      |")
+    print("| 2. Try to translate to your chosen language, press ENTER when you are done.       |")
     print("| 3. Compare you answer with the actual translation.                                |")
     print("| 4. When you are done, press ENTER to display the next line of lyrics.             |")
     print("|                                                                                   |")
