@@ -5,46 +5,28 @@ import api.translate as translate_client
 import requests
 import time
 
+import cli
+
 def main():
-    print("+-----------------------------------------------------------------------------------+")
-    print("|                                                                                   |")
-    print("| Welcome to Lyringo!                                                               |")
-    print("|                                                                                   |")
-    print("| Learn new languages by translating your favourite songs.                          |")
-    print("|                                                                                   |")
-    print("+-----------------------------------------------------------------------------------+")
-    print("")
-    print("+-----------------------------------------------------------------------------------+")
-    print("|                                                                                   |")
-    print("| There are two alternatives for selecting a song:                                  |")
-    print("|                                                                                   |")
-    print('| 1 - Let Lyringo choose a random song from your playlist.                          |')
-    print('| 2 - Manually search for a song.                                                   |')
-    print("|                                                                                   |")
-    print("+-----------------------------------------------------------------------------------+")
-    print("")
+
+    cli.welcome()
 
     # Keep asking until the user provides a valid choice (no default).
     while True:
         choice = input("Input (1 or 2): ").strip()
-        if choice in ("1", "2"):
-            break
-        print("Invalid input. Please enter 1 or 2.")
+        if choice in ("1", "2"): break
+        cli.print_in_box("Invalid input. Please enter 1 or 2.")
 
     if choice == "2":
         # Manual entry: ask for title and artist and construct a minimal song dict
-        print("")
-        print("+-----------------------------------------------------------------------------------+")
-        print("|                                                                                   |")
-        print("| Search for your song, and make sure to type carefully.                            |")
-        print("| A random song may be selected if your input is not recognized.                    |")
-        print("|                                                                                   |")
-        print("+-----------------------------------------------------------------------------------+")
-        print("")
+        cli.print_in_box([
+            "Search for your song, and make sure to type carefully.",
+            "A random song may be selected if your input is not recognized.",
+        ])
         track = input("Song title: ").strip()
         artist_input = input("Artist name: ").strip()
         if not track:
-            print("No song title provided. Exiting.")
+            cli.print_in_box("No song title provided. Exiting.")
             return
         primary_artist = artist_input or ""
         print("")
@@ -53,45 +35,35 @@ def main():
     else:
         # Playlist flow (default)
         token = spotify_client.get_token()
-        print("")
-        print("+-----------------------------------------------------------------------------------+")
-        print("|                                                                                   |")
-        print("| How to get the link of a playlist in Spotify:                                     |")
-        print("|                                                                                   |")
-        print("| 1. Go to your playlist and press the three dots.                                  |")
-        print("| 2. Press 'Share' -> 'Copy playlist link'.                                         |")
-        print("|                                                                                   |")
-        print("+-----------------------------------------------------------------------------------+")
-        print("")
+        cli.print_in_box([
+            "How to get the link of a playlist in Spotify:",
+            "",
+            "1. Go to your playlist and press the three dots.",
+            "2. Press 'Share' -> 'Copy playlist link'.",
+        ])
         # Prompt until a plausible Spotify playlist link/URI is provided and a song can be fetched.
         while True:
             link = input("Paste your link here: ").strip()
             if not link:
-                print("")
-                print("Paste a link here. Please try again.")
+                cli.print_in_box("Paste a link here. Please try again.")
                 print("")
                 continue
             if not ("spotify" in link and ("playlist" in link or link.startswith("spotify:"))):
-                print("")
-                print("Invalid Spotify playlist link. Please try again.")
+                cli.print_in_box("Invalid Spotify playlist link. Please try again.")
                 print("")
                 continue
-
-            print("")
-            print("+-----------------------------------------------------------------------------------+")
-            print("|                                                                                   |")
-            print("| Choosing a random song from your playlist...                                      |")
-            print("|                                                                                   |")
-            print("+-----------------------------------------------------------------------------------+")
+            cli.print_in_box("Choosing a random song from your playlist...")
             try:
                 random_song = spotify_client.get_random_song_from_playlist(token, link)
             except Exception as e:
-                print(f"Error reading playlist: {e}")
-                print("Please check the link and your internet connection, then try again.")
+                cli.print_in_box([
+                    f"Error reading playlist: {e}",
+                    "Please check the link and your internet connection, then try again."
+                ])
                 continue
 
             if not random_song:
-                print("Could not find a song in that playlist. Try another playlist link.")
+                cli.print_in_box("Could not find a song in that playlist. Try another playlist link.")
                 continue
 
             track = random_song.get("track_name")
@@ -119,27 +91,23 @@ def main():
                 # manually searched (option 2). For playlist flow we avoid the
                 # duplicate-looking prompt but still fetch lyrics.
                 if 'manual_mode' in locals() and manual_mode:
-                    print("+-----------------------------------------------------------------------------------+")
-                    print("|                                                                                   |")
-                    print("| Searching for your song...                                                        |")
-                    print("|                                                                                   |")
-                    print("+-----------------------------------------------------------------------------------+")
+                    print("Searching for your song...")
                 lyrics_info = genius_client.get_song_lyrics(track, primary_artist)
                 break
             except requests.exceptions.Timeout:
                 if attempt < max_attempts:
-                    print(f"Search timed out (attempt {attempt}/{max_attempts}). Retrying...")
+                    cli.print_in_box(f"Search timed out (attempt {attempt}/{max_attempts}). Retrying...")
                     time.sleep(1.5 * attempt)
                     continue
                 else:
-                    print("Search timed out after multiple attempts. Please check your internet connection and try again later.")
+                    cli.print_in_box("Search timed out after multiple attempts. Please check your internet connection and try again later.")
                     return
             except requests.exceptions.RequestException as e:
-                print(f"Network error while searching for song: {e}")
+                cli.print_in_box(f"Network error while searching for song: {e}")
                 return
             except Exception as e:
                 # Unexpected error from the lyrics provider; show a friendly message.
-                print(f"Error while searching for song: {e}")
+                cli.print_in_box(f"Error while searching for song: {e}")
                 return
 
         formatted_lyrics = None
@@ -163,43 +131,41 @@ def main():
                 # not found. If a formatted header exists but the body is empty,
                 # report that there are no lyrics.
                 if not formatted_lyrics:
-                    print("no song named that found")
+                    cli.print_in_box("no song named that found")
                     return
                 else:
-                    print("no lyrics, quitting")
+                    cli.print_in_box("no lyrics, quitting")
                     return
             else:
                 # Playlist flow: inform the user and try another random song.
                 display_song = header if header else (f"{track} - {primary_artist}" if primary_artist else f"{track}")
-                print("")
-                print(f"{display_song} has no lyrics. Choosing another random song...")
-                print("")
+                cli.print_in_box(f"{display_song} has no lyrics. Choosing another random song...")
                 no_lyrics_attempts += 1
                 if no_lyrics_attempts >= max_no_lyrics_attempts:
                     # After several attempts, ask the user for another playlist
                     # link so they can provide a playlist that actually has
                     # lyrics. Allow the user to press ENTER to quit.
-                    print("Tried several songs in this playlist but couldn't find lyrics.")
-                    print("Please paste another playlist link (or press ENTER to exit):")
+                    cli.print_in_box("Tried several songs in this playlist but couldn't find lyrics.")
+                    cli.print_in_box("Please paste another playlist link (or press ENTER to exit):")
                     while True:
                         print("")
                         new_link = input("link: ").strip()
                         if not new_link:
-                            print("No new playlist provided. Exiting.")
+                            cli.print_in_box("No new playlist provided. Exiting.")
                             return
                         if not ("spotify" in new_link and ("playlist" in new_link or new_link.startswith("spotify:"))):
-                            print("Invalid Spotify playlist link. Please try again or press ENTER to quit.")
+                            cli.print_in_box("Invalid Spotify playlist link. Please try again or press ENTER to quit.")
                             continue
                         # try to select a random song from the newly provided playlist
                         try:
                             new_song = spotify_client.get_random_song_from_playlist(token, new_link)
                         except Exception as e:
-                            print(f"Error reading new playlist: {e}")
-                            print("Please try another link or press ENTER to quit.")
+                            cli.print_in_box(f"Error reading new playlist: {e}")
+                            cli.print_in_box("Please try another link or press ENTER to quit.")
                             continue
 
                         if not new_song:
-                            print("Could not find a song in that playlist. Try another playlist link or press ENTER to quit.")
+                            cli.print_in_box("Could not find a song in that playlist. Try another playlist link or press ENTER to quit.")
                             continue
 
                         # Adopt the new playlist and reset attempts
@@ -216,11 +182,11 @@ def main():
                     # `token` and `link` are set in the playlist branch above.
                     new_song = spotify_client.get_random_song_from_playlist(token, link)
                 except Exception as e:
-                    print(f"Error selecting another song from playlist: {e}")
+                    cli.print_in_box(f"Error selecting another song from playlist: {e}")
                     return
 
                 if not new_song:
-                    print("Could not find another song in the playlist. Exiting.")
+                    cli.print_in_box("Could not find another song in the playlist. Exiting.")
                     return
 
                 random_song = new_song
@@ -241,23 +207,13 @@ def main():
     else:
         display_song = f"{track} - {primary_artist}" if primary_artist else f"{track}"
     print("")
-    print(f"Your song is: {display_song}")
+    cli.print_in_box(f"Your song is: {display_song}")
     print("")
-
-    #if lyrics_language:
-        # convert returned code/name to a friendly display name
-        #display = translate_client.code_to_display_name(lyrics_language)
-        # print(f"The song is in {display}")
-    #else:
-        #print("Song language not provided by lyrics metadata.")
-    
-    print("+-----------------------------------------------------------------------------------+")
-    print("|                                                                                   |")
-    print("| What language do you want to translate the song to?                               |")
-    print("|                                                                                   |")
-    print("| e.g english, swedish, spanish...                                                  |")
-    print("|                                                                                   |")
-    print("+-----------------------------------------------------------------------------------+")
+    cli.print_in_box([
+        "What language do you want to translate the song to?",
+        "",
+        "e.g english, swedish, spanish...",
+    ])
     print("")
     user_lang = input("Language: ").strip()
     print()
@@ -269,13 +225,13 @@ def main():
         if len(user_lang) == 2 and user_lang.isalpha():
             code = user_lang.lower()
         else:
-            print(f"'{user_lang}' is an unknown language, defaulting to English.")
+            cli.print_in_box(f"'{user_lang}' is an unknown language, defaulting to English.")
             print("")
             code = "en"
 
     # make sure a song was actually chosen
     if not random_song:
-        print("No song selected. Exiting.")
+        cli.print_in_box("No song selected. Exiting.")
         return
 
     # Start the translation game: for each non-empty line in the lyrics body,
@@ -296,31 +252,26 @@ def main():
     total = 0
     score = 0
     
-    print("+-----------------------------------------------------------------------------------+")
-    print("|                                                                                   |")
-    print("| How to play:                                                                      |")
-    print("|                                                                                   |")
-    print("| 1. Examine the displayed line of lyrics.                                          |")
-    print("| 2. Try to translate to your chosen language, press ENTER when you are done.       |")
-    print("| 3. Compare you answer with the actual translation.                                |")
-    print("| 4. When you are done, press ENTER to display the next line of lyrics.             |")
-    print("|                                                                                   |")
-    print("| Leave blank to skip a line.                                                       |")
-    print("| Press Ctrl+C to quit early.                                                       |")
-    print("|                                                                                   |")
-    print("|                                                                                   |")
-    print("|                 +-----------------------------------------------+                 |")
-    print("|                 | Press ENTER whenever you are ready to start!  |                 |")
-    print("|                 | Remember that translations may be inaccurate. |                 |")
-    print("|                 +-----------------------------------------------+                 |")
-    print("|                                                                                   |")
-    print("|                                                                                   |")
-    print("+-----------------------------------------------------------------------------------+")
+    cli.print_in_box([
+        "How to play:",
+        "",
+        "1. Examine the displayed line of lyrics.",
+        "2. Try to translate to your chosen language, press ENTER when you are done.",
+        "3. Compare you answer with the actual translation.",
+        "4. When you are done, press ENTER to display the next line of lyrics.",
+        "",
+        "Leave blank to skip a line.",
+        "Press Ctrl+C to quit early.",
+    ])
+    cli.print_in_box([
+        "Press ENTER whenever you are ready to start!",
+        "Remember that translations may be inaccurate.",
+    ])
     # Wait for the user to press Enter before starting the game
     try:
         input("")
     except (KeyboardInterrupt, EOFError):
-        print("\nInterrupted. Exiting.")
+        cli.print_in_box("Interrupted. Exiting.")
         return
     for orig in lines:
         orig_strip = orig.strip()
@@ -329,8 +280,8 @@ def main():
             continue
 
         total += 1
-        print(f"\nOriginal:       {orig_strip}")
-        answer = input("Translate:      ").strip()
+        cli.print_in_box(f"Original: {orig_strip}")
+        answer = input("Translate: ").strip()
 
         # Get the expected translation from the translate client.
         try:
@@ -341,13 +292,13 @@ def main():
         # extract body in case the translator wrapped headers
         _, expected_body = translate_client._extract_header(expected_full)
 
-        print(f"Answer:         {expected_body}")
+        cli.print_in_box(f"Answer: {expected_body}")
         # Wait for the user to press Enter before showing the next lyrics line.
         # This ensures a line-by-line flow: translate -> see correct answer -> press Enter -> next line.
         try:
             input("")
         except (KeyboardInterrupt, EOFError):
-            print("\nExiting the game.")
+            print("Exiting the game.")
             break
 
 
