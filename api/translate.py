@@ -1,12 +1,9 @@
-# ...existing code...
 import re
 from typing import Tuple, Optional, List
 import requests
 
 GOOGLE_TRANSLATE_URL = "https://translate.googleapis.com/translate_a/single"
 
-# Mapping of common language names / aliases -> ISO 639-1 codes used by Google Translate.
-# Includes common names, native names and short aliases.
 _LANG_NAME_TO_CODE = {
     "afrikaans": "af",
     "albanian": "sq",
